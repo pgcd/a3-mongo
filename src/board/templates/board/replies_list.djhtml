@@ -1,0 +1,6 @@
+{% load url from future %}
+
+<section class="replies-list">{% for post in replies_list %}
+    <article><a href="{{ post.get_absolute_url }}">{{ post }} [{{post.replies_count}}]</a></article>
+{% endfor %}
+</section>

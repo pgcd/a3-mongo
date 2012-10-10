@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load url from future %}
+{% load board_tags %}
+{% block content %}
+    <section id="main-post">
+        <h3>{{ topic }}</h3>
+        <h4>{% for tag in topic.tags %}
+            {{ tag }}
+        {% endfor %}
+        </h4>
+    <article>{{ topic.body|safe }}</article>
+    </section>
+    <section class="replies-list">{% for post in topic.replies %}
+        <article>
+            <h5>{{ post.title }}</h5>
+            {{ post.body|safe }}
+        </article>
+    {% endfor %}
+        {% include "paginator.html" %}
+    </section>
+{% endblock %}

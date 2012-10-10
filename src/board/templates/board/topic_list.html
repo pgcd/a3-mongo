@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load url from future %}
+
+{% block content %}
+<section class="topic-list">{% for topic in topic_list %}
+<article><a href="{{ topic.get_absolute_url }}">{{ topic.title }}</a> [{{topic.replies|length}}]
+{% for t in topic.tags %}<a href="{% url "board_topic_list_by_tag" t %}">{{ t }}</a>, {% endfor %}
+</article>
+{% endfor %}
+</section>
+
+{% include "paginator.html" %}
+{% endblock %}

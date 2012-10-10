@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load url from future %}
+
+{% block content %}
+<section class="post-list">{% for post in post_list %}
+<article><a href="{{ post.get_absolute_url }}">{{ post }}</a> [{{post.replies.count}}]</article>
+{% endfor %}
+</section>
+{% endblock %}
