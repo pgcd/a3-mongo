@@ -12,7 +12,7 @@
     </section>
     <section class="replies-list">{% for post in topic.replies %}
         <article>
-            <h5>{{ post.title }}</h5>
+            <h5>{{ post.user.username }}: {{ post.title }}</h5>
             {{ post.body|safe }}
         </article>
     {% endfor %}

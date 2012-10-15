@@ -5,31 +5,34 @@ from django.contrib.webdesign import lorem_ipsum
 from django.db import models
 from django.db.models import permalink
 from djangotoolbox.fields import ListField, EmbeddedModelField
+from uuidfield import UUIDField
 # Create your models here.
 import time
 from django_mongodb_engine.contrib import MongoDBManager
 
 class PostManager(MongoDBManager):
-    def createRubbish(self, topic):
+    def createRubbish(self, topic=None):
+        """
+        :return: Post
+        """
         p = Post()
-        p.topic = topic
         p.title = lorem_ipsum.words(random.randint(0, 5), False)
         p.body = p.body_markup = "<br/>\n".join(lorem_ipsum.paragraphs(random.randint(0,7), False))
         p.summary = lorem_ipsum.paragraph()
         p.user = User.objects.all()[random.randint(0,850)]
+        p.topic = topic
         if random.randint(1,50)==1:
             p.hidden = True
         if random.randint(1,100)==1:
             p.deleted = True
-
-        p.save()
+#        p.save()
         return p
 
 
 
 class Post(models.Model):
     #Data
-    topic = models.ForeignKey('Topic', related_name="replies")
+    id = UUIDField(auto=True, primary_key=True)
     title = models.CharField(max_length = 255, blank = True)
     body = models.TextField()
     body_markup = models.TextField(blank = True)
@@ -37,30 +40,15 @@ class Post(models.Model):
     user = EmbeddedModelField(User, blank=True, null=True, db_index=True)
     user_signature = models.TextField(blank = True, default = '')
     user_info = models.CharField(max_length = 255, blank = True, default = '')
-
-    #Stats
-#    user = models.ForeignKey(User, related_name = 'posts', blank = True, null = True)
+    topic = models.ForeignKey("Topic", blank=True, null=True, related_name='all_posts')
 
     deleted = models.BooleanField()
     hidden = models.BooleanField()
-
-#    content_type = models.ForeignKey(ContentType, blank = True, null = True)
-#    object_id = models.PositiveIntegerField(blank = True, null = True, db_index = True)
-#    in_reply_to = generic.GenericForeignKey()
-
     last_updated = models.DateTimeField(auto_now=True, null=True)
-
-#    last_post = models.ForeignKey('self', related_name='last_reply_to', blank=True, null=True)
-#    last_poster = models.ForeignKey(User, related_name='unanswered_replies', blank=True, null=True)
-    #
 
     rating = models.IntegerField(default = 0)
 
     ip = models.IPAddressField(default = '0.0.0.0')
-    #Denorm
-    views_count = models.PositiveIntegerField(default = 0)
-#    mentions = models.ManyToManyField(User, related_name = 'mentions', blank = True, null = True)
-#    recipients = models.ManyToManyField(User, related_name='private_messages', blank=True, null=True)
 
     objects = PostManager()
 
@@ -74,22 +62,22 @@ class Post(models.Model):
 #    def get_absolute_url(self):
 #        return 'board_post_view', (self.pk,), {}
 
-
 class TopicManager(MongoDBManager):
     def createRubbish(self, max_posts=3000):
-        t = Topic()
+        p = Post.objects.createRubbish()
+        t = Topic(obj=p)
         for i in range(0, random.randint(0, 5)):
             t.tags.append(lorem_ipsum.words(random.randint(1, 2), False))
         if random.randint(0,50)==1:
             t.homepage = True
+        t.deleted = t.obj.deleted
+        t.hidden = t.obj.hidden
+        for i in range(0, random.randint(0, max_posts)):
+            t.replies.append(Post.objects.createRubbish(t))
+        t.replies_count = len(t.replies)
         t.save()
-        first = Post.objects.createRubbish(t)
-        t.replies.add(first)
-        t.title = first.title + '//'+t.pk
-        t.body = first.body
-
-        for i in range(0, random.randint(1, max_posts)):
-            t.replies.add(Post.objects.createRubbish(t))
+        t.obj.topic = t
+        t.obj.save()
 
         return t
 
@@ -97,11 +85,24 @@ class TopicManager(MongoDBManager):
 
 class Topic(models.Model):
     homepage = models.BooleanField(db_index=True)
-    tags = ListField()
-    #replies = ListField(EmbeddedModelField(Post))
+    hidden = models.BooleanField()
+    deleted = models.BooleanField()
+    tags = ListField(db_index=True)
+    obj = EmbeddedModelField()
+    replies = ListField(EmbeddedModelField(Post))
     objects = TopicManager()
-    title = models.CharField(max_length=255, blank=True)
-    body = models.TextField(blank=True)
+#    title = models.CharField(max_length=255, blank=True)
+#    body = models.TextField(blank=True)
+    views_count = models.PositiveIntegerField(default = 0)
+    replies_count = models.PositiveIntegerField(default = 0)
+
+    @property
+    def title(self):
+        return self.obj.title or self.pk
+
+    @property
+    def body(self):
+        return self.obj.body
 
     timeshift = models.IntegerField(default = 0) #Mostly used for bookkeeping, but might be useful later
     timestamp = models.PositiveIntegerField(default=0)
