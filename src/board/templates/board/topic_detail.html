@@ -3,16 +3,17 @@
 {% load board_tags %}
 {% block content %}
     <section id="main-post">
-        <h3>{{ topic }}</h3>
-        <h4>{% for tag in topic.tags %}
-            {{ tag }}
-        {% endfor %}
-        </h4>
-    <article>{{ topic.body|safe }}</article>
+        <h2>{{ topic }}</h2>
+        <h4>[{% for t in topic.tags %}<a href="{% url "board_topic_list_by_tag" t %}">{{ t }}</a>, {% endfor %}] --
+            Timestamp: {{ topic.timestamp }} -- Timeshift: {{ topic.timeshift }}</h4>
+        <article>{{ topic.body|safe }}</article>
     </section>
     <section class="replies-list">{% for post in topic.replies %}
         <article>
-            <h5>{{ post.user.username }}: {{ post.title }}</h5>
+            <h5>
+                <a href="{% url "board_topic_list_by_user" post.user.username %}">{{ post.user.username }}</a>:
+                {{ post.title }} [{{ post.id }}]</h5>
+            <h6>Rating: {{ post.rating }} -- Last updated: {{ post.last_updated }}</h6>
             {{ post.body|safe }}
         </article>
     {% endfor %}

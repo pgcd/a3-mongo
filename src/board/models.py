@@ -44,6 +44,7 @@ class Post(models.Model):
 
     deleted = models.BooleanField()
     hidden = models.BooleanField()
+    created = models.DateTimeField(auto_now_add=True, null=True)
     last_updated = models.DateTimeField(auto_now=True, null=True)
 
     rating = models.IntegerField(default = 0)
@@ -95,6 +96,10 @@ class Topic(models.Model):
 #    body = models.TextField(blank=True)
     views_count = models.PositiveIntegerField(default = 0)
     replies_count = models.PositiveIntegerField(default = 0)
+    rating = models.IntegerField(default = 0)
+    timeshift = models.IntegerField(default = 0) #Mostly used for bookkeeping, but might be useful later
+    timestamp = models.PositiveIntegerField(default=0)
+
 
     @property
     def title(self):
@@ -104,8 +109,6 @@ class Topic(models.Model):
     def body(self):
         return self.obj.body
 
-    timeshift = models.IntegerField(default = 0) #Mostly used for bookkeeping, but might be useful later
-    timestamp = models.PositiveIntegerField(default=0)
     def save(self, *args, **kwargs):
         if not self.timestamp:
             self.timestamp = int(time.mktime(datetime.datetime.now().timetuple()))
@@ -117,3 +120,6 @@ class Topic(models.Model):
     @permalink
     def get_absolute_url(self):
         return 'board_topic_view', (self.pk,), {}
+
+    class Meta:
+        ordering = ['-timestamp']
