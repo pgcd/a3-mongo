@@ -3,7 +3,7 @@
 
 {% block content %}
 <section class="topic-list">{% for topic in topic_list %}
-<article>{{ topic.obj.user.username }}: <a href="{{ topic.get_absolute_url }}">{{ topic.title }}</a>
+<article>{{ topic.obj.user.username }}: <a href="{{ topic.get_absolute_url }}">{{ topic.title }} [{{ topic.rating }}]</a>
     [Replies: {{topic.replies_count}} -- Timestamp: {{ topic.timestamp }} -- Timeshift: {{ topic.timeshift }}]
 {% for t in topic.tags %}<a href="{% url "board_topic_list_by_tag" t %}">{{ t }}</a>, {% endfor %}
 </article>
