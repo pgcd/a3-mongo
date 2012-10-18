@@ -38,9 +38,6 @@ class Post(models.Model):
     body_markup = models.TextField(blank=True)
     summary = models.TextField(blank=True, default='')
     user = EmbeddedModelField(User, blank=True, null=True, db_index=True)
-    user_signature = models.TextField(blank=True, default='')
-    user_info = models.CharField(max_length=255, blank=True, default='')
-
     deleted = models.BooleanField()
     hidden = models.BooleanField()
     created = models.DateTimeField(auto_now_add=True, null=True)
@@ -123,6 +120,7 @@ class Topic(models.Model):
     def save(self, *args, **kwargs):
         if not self.timestamp:
             self.timestamp = int(time.mktime(datetime.datetime.now().timetuple()))
+        self.replies_count = len(self.replies)
         super(Topic, self).save(*args, **kwargs)
 
     def get_reply_by_id(self, reply_id):
