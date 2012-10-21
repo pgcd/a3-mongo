@@ -26,7 +26,8 @@ class TopicListView(ListView):
     def get_queryset(self):
         qs = super(TopicListView, self).get_queryset()
         if 'username' in self.kwargs:
-            qs = Topic.objects.raw_query({"replies.user.username": self.kwargs['username']})
+            #qs = Topic.objects.raw_query({"replies.user.username": self.kwargs['username']})
+            qs = qs.filter(pk__in=list(Post.objects.raw_query({"user.username": self.kwargs['username']}).values_list('topic_id', flat=True)))
         if 'homepage_only' in self.kwargs:
             qs = qs.filter(homepage=True)
         if 'tag' in self.kwargs:

@@ -8,7 +8,7 @@
             Timestamp: {{ topic.timestamp }} -- Timeshift: {{ topic.timeshift }}</h4>
         <article>{{ topic.body|safe }}</article>
     </section>
-    <section class="replies-list">{% for post in topic.replies %}
+    <section class="replies-list">{% for post in topic.replies.all %}
         <article>
             <h5>
                 <a href="{% url "board_topic_list_by_user" post.user.username %}">{{ post.user.username }}</a>:

@@ -13,6 +13,17 @@ class PostForm(ModelForm):
         self.obj = obj
         super(PostForm, self).__init__(*args, **kwargs)
 
+    def process_markup(self, markup):
+        """
+           This is where we'll do whatever markup processing we require.
+        """
+        return markup
+
+    def clean(self):
+        d = self.cleaned_data
+        return d
+
+
     def save(self, *args):
         try:
             user = User.objects.get(pk=self.cleaned_data.get('user'))
@@ -20,13 +31,15 @@ class PostForm(ModelForm):
             user = User(username='anon') #Maybe we can do better?
 
         self.instance.user = user
+        self.instance.body = self.process_markup(self.instance.body_markup)
+
         if self.obj is None: #Starting a new topic!
             self.obj = Topic(obj=self.instance)
         else:
-            self.obj.replies.append(self.instance)
+            self.obj.replies.add(self.instance)
         self.obj.save()
         return self.obj
 
     class Meta:
         model = Post
-        fields = ['title','body']
+        fields = ['title','body_markup']

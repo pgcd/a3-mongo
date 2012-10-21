@@ -5,12 +5,12 @@ from django.contrib.auth.models import User
 from django.contrib.webdesign import lorem_ipsum
 from django.db import models
 from django.db.models import permalink, F
-from djangotoolbox.fields import ListField, EmbeddedModelField
+from djangotoolbox.fields import ListField, EmbeddedModelField, SetField
 from uuidfield import UUIDField
 # Create your models here.
 import time
 from django_mongodb_engine.contrib import MongoDBManager
-
+from profiles.models import Profile
 
 
 class PostManager(MongoDBManager):
@@ -18,7 +18,7 @@ class PostManager(MongoDBManager):
         """
         :return: Post
         """
-        p = Post()
+        p = Post(topic=topic)
         p.title = lorem_ipsum.words(random.randint(0, 5), False)
         p.body = p.body_markup = "<br/>\n".join(lorem_ipsum.paragraphs(random.randint(0, 7), False))
         p.summary = lorem_ipsum.paragraph()
@@ -32,7 +32,6 @@ class PostManager(MongoDBManager):
 
 class Post(models.Model):
     #Data
-    id = UUIDField(auto=True, primary_key=True)
     title = models.CharField(max_length=255, blank=True)
     body = models.TextField()
     body_markup = models.TextField(blank=True)
@@ -42,7 +41,7 @@ class Post(models.Model):
     hidden = models.BooleanField()
     created = models.DateTimeField(auto_now_add=True, null=True)
     last_updated = models.DateTimeField(auto_now=True, null=True)
-
+    topic = models.ForeignKey("Topic", blank=True, null=True, related_name="replies") #Nullable for first posts
     rating = models.IntegerField(default=0)
 
     ip = models.IPAddressField(default='0.0.0.0')
@@ -56,27 +55,43 @@ class Post(models.Model):
             return u"#%s" % self.pk
 
     def adjustRating(self, rating=0):
-        Topic.objects.raw_update({"replies.id":self.id.hex},{"$inc":{"rating":rating, "replies.$.rating":rating}})
+#        Topic.objects.raw_update({"replies.id":self.id.hex},{"$inc":{"rating":rating, "replies.$.rating":rating}})
+        Post.objects.raw_update({"_id":ObjectId(self.pk)},{"$inc":{"rating":rating}})
+        self.topic.adjustRating(rating)
         return self
+
+    def addToUserPosts(self):
+        return Profile.objects.raw_update(
+            {"user_id":ObjectId(self.user.pk)},
+            {"$addToSet":{"posts":self.pk},"$addToSet":{"topics":self.topic_id},})
+
+    def save(self, force_insert=False, force_update=False, using=None):
+        result = super(Post, self).save(force_insert, force_update, using)
+        if self.topic is not None:
+            self.topic.updateRepliesCount()
+        return result
+
+    class Meta:
+        ordering = ['id']
+        get_latest_by = 'id'
 
 #    @permalink
 #    def get_absolute_url(self):
 #        return 'board_post_view', (self.pk,), {}
 
 class TopicManager(MongoDBManager):
-    def createRubbish(self, reply_chance=0.98):
+    def createRubbish(self, reply_chance=0.985):
         p = Post.objects.createRubbish()
         t = Topic(obj=p)
         for i in range(0, random.randint(0, 5)):
-            t.tags.append(lorem_ipsum.words(random.randint(1, 2), False))
+            t.tags.add(lorem_ipsum.words(random.randint(1, 2), False))
         if random.randint(0, 50) == 1:
             t.homepage = True
         t.deleted = p.deleted
         t.hidden = p.hidden
-        while random.random() < reply_chance:
-            t.replies.append(Post.objects.createRubbish())
-        t.replies_count = len(t.replies)
         t.save()
+        while random.random() < reply_chance:
+            t.replies.add(Post.objects.createRubbish())
         return t
 
     def topicize(self, obj):
@@ -96,9 +111,8 @@ class Topic(models.Model):
     homepage = models.BooleanField(db_index=True)
     hidden = models.BooleanField()
     deleted = models.BooleanField()
-    tags = ListField(db_index=True)
+    tags = SetField(db_index=True)
     obj = EmbeddedModelField()
-    replies = ListField(EmbeddedModelField(Post))
     objects = TopicManager()
     #    title = models.CharField(max_length=255, blank=True)
     #    body = models.TextField(blank=True)
@@ -107,6 +121,10 @@ class Topic(models.Model):
     rating = models.IntegerField(default=0)
     timeshift = models.IntegerField(default=0) #Mostly used for bookkeeping, but might be useful later
     timestamp = models.PositiveIntegerField(default=0, db_index=True)
+
+
+    def __init__(self, *args, **kwargs):
+        super(Topic, self).__init__(*args, **kwargs)
 
 
     @property
@@ -120,14 +138,19 @@ class Topic(models.Model):
     def save(self, *args, **kwargs):
         if not self.timestamp:
             self.timestamp = int(time.mktime(datetime.datetime.now().timetuple()))
-        self.replies_count = len(self.replies)
+#        self.replies_count = self.replies.count()
         super(Topic, self).save(*args, **kwargs)
 
-    def get_reply_by_id(self, reply_id):
-        try:
-            return filter(lambda x: x.pk.hex == reply_id, self.replies)[0]
-        except IndexError:
-            return Post()
+
+    def updateRepliesCount(self):
+        replies_count = self.replies.count()
+        Topic.objects.raw_update({"_id":ObjectId(self.pk)},{"$set": {"replies_count": replies_count}})
+        return replies_count
+#    def get_reply_by_id(self, reply_id):
+#        try:
+#            return filter(lambda x: x.pk.hex == reply_id, self.replies)[0]
+#        except IndexError:
+#            return Post()
 
     def adjustRating(self, rating=0):
         Topic.objects.raw_update({"_id":ObjectId(self.pk)},{"$inc":{"rating":rating}})

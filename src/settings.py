@@ -163,3 +163,6 @@ LOGGING = {
         },
     }
 }
+
+
+AUTH_PROFILE_MODULE = 'profiles.Profile'
