@@ -12,7 +12,7 @@
         <article>
             <h5>
                 <a href="{% url "board_topic_list_by_user" post.user.username %}">{{ post.user.username }}</a>:
-                {{ post.title }} [{{ post.id }}]</h5>
+                {{ post.title }} [<a name="{{ post.id }}">{{ post.id }}</a>]</h5>
             <h6>Rating: {{ post.rating }} -- Last updated: {{ post.last_updated }}</h6>
             {{ post.body|safe }}
         </article>

@@ -55,15 +55,16 @@ class Post(models.Model):
             return u"#%s" % self.pk
 
     def adjustRating(self, rating=0):
-#        Topic.objects.raw_update({"replies.id":self.id.hex},{"$inc":{"rating":rating, "replies.$.rating":rating}})
-        Post.objects.raw_update({"_id":ObjectId(self.pk)},{"$inc":{"rating":rating}})
+    #        Topic.objects.raw_update({"replies.id":self.id.hex},{"$inc":{"rating":rating, "replies.$.rating":rating}})
+        Post.objects.raw_update({"_id": ObjectId(self.pk)}, {"$inc": {"rating": rating}})
         self.topic.adjustRating(rating)
         return self
 
     def addToUserPosts(self):
-        return Profile.objects.raw_update(
-            {"user_id":ObjectId(self.user.pk)},
-            {"$addToSet":{"posts":self.pk},"$addToSet":{"topics":self.topic_id},})
+        Profile.objects.raw_update(
+            {"user_id": ObjectId(self.user.pk)},
+            {"$addToSet": {"topics": self.topic_id}, })
+        return self
 
     def save(self, force_insert=False, force_update=False, using=None):
         result = super(Post, self).save(force_insert, force_update, using)
@@ -138,31 +139,37 @@ class Topic(models.Model):
     def save(self, *args, **kwargs):
         if not self.timestamp:
             self.timestamp = int(time.mktime(datetime.datetime.now().timetuple()))
-#        self.replies_count = self.replies.count()
+        #        self.replies_count = self.replies.count()
         super(Topic, self).save(*args, **kwargs)
 
 
     def updateRepliesCount(self):
         replies_count = self.replies.count()
-        Topic.objects.raw_update({"_id":ObjectId(self.pk)},{"$set": {"replies_count": replies_count}})
+        Topic.objects.raw_update({"_id": ObjectId(self.pk)}, {"$set": {"replies_count": replies_count}})
         return replies_count
-#    def get_reply_by_id(self, reply_id):
-#        try:
-#            return filter(lambda x: x.pk.hex == reply_id, self.replies)[0]
-#        except IndexError:
-#            return Post()
 
-    def adjustRating(self, rating=0):
-        Topic.objects.raw_update({"_id":ObjectId(self.pk)},{"$inc":{"rating":rating}})
+    def addToUserTopics(self):
+        try:
+            Profile.objects.raw_update(
+                {"user_id": ObjectId(self.obj.user.pk)},
+                {"$addToSet": {"topics": self.pk}, })
+        except AttributeError:
+            #If the obj has no user attribute (it's not a Post, for instance)
+            pass
         return self
 
 
-#    def rate(self, rating, reply_id=None):
-#        #self.rating += rating
-#        Topic.objects.raw_update()
-#        if reply_id:
-#            self.get_reply_by_id(reply_id).rating += rating
-#        return self.save()
+    def adjustRating(self, rating=0):
+        Topic.objects.raw_update({"_id": ObjectId(self.pk)}, {"$inc": {"rating": rating}})
+        return self
+
+
+    #    def rate(self, rating, reply_id=None):
+    #        #self.rating += rating
+    #        Topic.objects.raw_update()
+    #        if reply_id:
+    #            self.get_reply_by_id(reply_id).rating += rating
+    #        return self.save()
 
 
     def __unicode__(self):

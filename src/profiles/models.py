@@ -11,9 +11,7 @@ class ProfilesManager(MongoDBManager):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, related_name='profile', db_index=True)
-    posts = ListField()
     topics = ListField()
-
     objects = ProfilesManager()
 
     def __unicode__(self):

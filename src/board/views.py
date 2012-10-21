@@ -1,4 +1,5 @@
 # Create your views here.
+from django.contrib.auth.models import User
 from django.db.models.aggregates import Count
 from django.shortcuts import redirect
 from django.views.generic import DetailView, ListView, CreateView
@@ -26,8 +27,12 @@ class TopicListView(ListView):
     def get_queryset(self):
         qs = super(TopicListView, self).get_queryset()
         if 'username' in self.kwargs:
-            #qs = Topic.objects.raw_query({"replies.user.username": self.kwargs['username']})
-            qs = qs.filter(pk__in=list(Post.objects.raw_query({"user.username": self.kwargs['username']}).values_list('topic_id', flat=True)))
+            user = User.objects.get(username=self.kwargs['username'])
+
+            #This can't actually work: we need to paginate here
+            qs = qs.filter(pk__in=user.get_profile().topics)
+
+
         if 'homepage_only' in self.kwargs:
             qs = qs.filter(homepage=True)
         if 'tag' in self.kwargs:
