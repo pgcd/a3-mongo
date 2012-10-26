@@ -1,0 +1,11 @@
+pymongo==2.3
+-e git+https://github.com/django-nonrel/django-1.4.git@1.4-nonrel
+-e git+https://github.com/django-nonrel/djangotoolbox.git@features/django-1.4
+-e git+https://github.com/django-nonrel/mongodb-engine.git@1.5
+argparse==1.2.1
+distribute==0.6.24
+django-debug-toolbar==0.9.4
+django-debug-toolbar-mongo==0.1.5
+django-uuidfield==0.4.0
+ipython==0.13
+wsgiref==0.1.2

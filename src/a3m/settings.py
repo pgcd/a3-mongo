@@ -1,8 +1,8 @@
-# Django settings for src project.
+# Django settings for a3m project.
 import os
 import socket
 HOSTNAME = socket.gethostname()
-SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
+SITE_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 print SITE_ROOT
 
@@ -102,14 +102,16 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+#    'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
-ROOT_URLCONF = 'src.urls'
+ROOT_URLCONF = 'a3m.urls'
 
 TEMPLATE_DIRS = (os.path.join(SITE_ROOT,'templates'),)
 
-INSTALLED_APPS = (
+AUTH_PROFILE_MODULE = 'profiles.Profile'
+
+INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -121,9 +123,10 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'board',
-    'debug_toolbar',
-    'debug_toolbar_mongo',
-)
+    'profiles',
+#    'debug_toolbar',
+#    'debug_toolbar_mongo',
+]
 
 DEBUG_TOOLBAR_PANELS = (
     'debug_toolbar.panels.version.VersionDebugPanel',
@@ -165,4 +168,3 @@ LOGGING = {
 }
 
 
-AUTH_PROFILE_MODULE = 'profiles.Profile'

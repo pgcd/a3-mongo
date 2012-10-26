@@ -1,4 +1,4 @@
-from utils import string_to_dict, string_to_list, get_query_string
+from a3m.utils import string_to_dict, string_to_list, get_query_string
 
 __author__ = 'pgcd'
 from django import template
