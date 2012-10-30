@@ -55,7 +55,6 @@ class Post(models.Model):
             return u"#%s" % self.pk
 
     def adjustRating(self, rating=0):
-    #        Topic.objects.raw_update({"replies.id":self.id.hex},{"$inc":{"rating":rating, "replies.$.rating":rating}})
         Post.objects.raw_update({"_id": ObjectId(self.pk)}, {"$inc": {"rating": rating}})
         self.topic.adjustRating(rating)
         return self
@@ -70,15 +69,16 @@ class Post(models.Model):
         result = super(Post, self).save(force_insert, force_update, using)
         if self.topic is not None:
             self.topic.updateRepliesCount()
+#            self.addToUserPosts() #The data transfer is massive so the benefit of this is slim to negative.
         return result
 
     class Meta:
         ordering = ['id']
         get_latest_by = 'id'
 
-#    @permalink
-#    def get_absolute_url(self):
-#        return 'board_post_view', (self.pk,), {}
+    @permalink
+    def get_absolute_url(self):
+        return 'board_topic_view', (), {'pk':self.topic_id, 'post':self.pk}
 
 class TopicManager(MongoDBManager):
     def createRubbish(self, reply_chance=0.985):
@@ -105,9 +105,6 @@ class TopicManager(MongoDBManager):
         t.rating = obj.rating
         t.save()
 
-#        t.obj.topic = t
-#        t.obj.save()
-
 class Topic(models.Model):
     homepage = models.BooleanField(db_index=True)
     hidden = models.BooleanField()
@@ -115,8 +112,6 @@ class Topic(models.Model):
     tags = SetField(db_index=True)
     obj = EmbeddedModelField()
     objects = TopicManager()
-    #    title = models.CharField(max_length=255, blank=True)
-    #    body = models.TextField(blank=True)
     views_count = models.PositiveIntegerField(default=0)
     replies_count = models.PositiveIntegerField(default=0)
     rating = models.IntegerField(default=0)
@@ -139,7 +134,7 @@ class Topic(models.Model):
     def save(self, *args, **kwargs):
         if not self.timestamp:
             self.timestamp = int(time.mktime(datetime.datetime.now().timetuple()))
-        #        self.replies_count = self.replies.count()
+#        self.addToUserTopics() #The data transfer is massive so the benefit of this is slim to negative.
         super(Topic, self).save(*args, **kwargs)
 
 
@@ -162,14 +157,6 @@ class Topic(models.Model):
     def adjustRating(self, rating=0):
         Topic.objects.raw_update({"_id": ObjectId(self.pk)}, {"$inc": {"rating": rating}})
         return self
-
-
-    #    def rate(self, rating, reply_id=None):
-    #        #self.rating += rating
-    #        Topic.objects.raw_update()
-    #        if reply_id:
-    #            self.get_reply_by_id(reply_id).rating += rating
-    #        return self.save()
 
 
     def __unicode__(self):

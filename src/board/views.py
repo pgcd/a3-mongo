@@ -1,7 +1,7 @@
 # Create your views here.
 from django.contrib.auth.models import User
 from django.db.models.aggregates import Count
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import DetailView, ListView, CreateView
 from django.views.generic.edit import ProcessFormView, ModelFormMixin
 from django.views.generic.list import MultipleObjectMixin, MultipleObjectTemplateResponseMixin
@@ -18,6 +18,13 @@ class PostListView(ListView):
     template_name = 'board/post_list.djhtml'
     paginate_by = 50
 
+    def get_queryset(self):
+        qs = super(PostListView, self).get_queryset()
+        if 'username' in self.kwargs:
+            user = get_object_or_404(User, username=self.kwargs['username'])
+            #qs = Post.objects.raw_query({'user.username':self.kwargs['username']}).order_by('-pk')
+            qs.filter(user=user)
+        return qs.order_by('-pk')
 
 class TopicListView(ListView):
     model = Topic
@@ -27,12 +34,7 @@ class TopicListView(ListView):
     def get_queryset(self):
         qs = super(TopicListView, self).get_queryset()
         if 'username' in self.kwargs:
-            user = User.objects.get(username=self.kwargs['username'])
-
-            #This can't actually work: we need to paginate here
-            qs = qs.filter(pk__in=user.get_profile().topics)
-
-
+            qs = Topic.objects.raw_query({'obj.user.username':self.kwargs['username']})
         if 'homepage_only' in self.kwargs:
             qs = qs.filter(homepage=True)
         if 'tag' in self.kwargs:
