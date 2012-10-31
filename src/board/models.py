@@ -11,6 +11,7 @@ from uuidfield import UUIDField
 import time
 from django_mongodb_engine.contrib import MongoDBManager
 from profiles.models import Profile
+from tags.models import Tag
 
 
 class PostManager(MongoDBManager):
@@ -85,7 +86,7 @@ class TopicManager(MongoDBManager):
         p = Post.objects.createRubbish()
         t = Topic(obj=p)
         for i in range(0, random.randint(0, 5)):
-            t.tags.add(lorem_ipsum.words(random.randint(1, 2), False))
+            t.tag(lorem_ipsum.words(random.randint(1, 2), False))
         if random.randint(0, 50) == 1:
             t.homepage = True
         t.deleted = p.deleted
@@ -153,11 +154,13 @@ class Topic(models.Model):
             pass
         return self
 
-
     def adjustRating(self, rating=0):
         Topic.objects.raw_update({"_id": ObjectId(self.pk)}, {"$inc": {"rating": rating}})
         return self
 
+    def tag(self, tagname):
+        self.tags.add(tagname)
+        return Tag.objects.create_or_update_count(tagname, self)
 
     def __unicode__(self):
         return self.title
