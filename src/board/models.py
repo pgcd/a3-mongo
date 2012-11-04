@@ -7,7 +7,6 @@ from django.db import models
 from django.db.models import permalink, F
 from djangotoolbox.fields import ListField, EmbeddedModelField, SetField
 from uuidfield import UUIDField
-# Create your models here.
 import time
 from django_mongodb_engine.contrib import MongoDBManager
 from profiles.models import Profile

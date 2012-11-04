@@ -1,3 +1,5 @@
+from bson import ObjectId
+from bson.errors import InvalidId
 from django.contrib.auth.models import User
 
 __author__ = 'pgcd'
@@ -26,8 +28,8 @@ class PostForm(ModelForm):
 
     def save(self, *args):
         try:
-            user = User.objects.get(pk=self.cleaned_data.get('user'))
-        except User.DoesNotExist:
+            user = User.objects.get(pk=ObjectId(self.cleaned_data.get('user')))
+        except (InvalidId, User.DoesNotExist):
             user = User(username='anon') #Maybe we can do better?
 
         self.instance.user = user
@@ -42,4 +44,5 @@ class PostForm(ModelForm):
 
     class Meta:
         model = Post
-        fields = ['title','body_markup']
+        fields = ['title','body_markup', 'user']
+
